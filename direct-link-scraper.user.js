@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Paste → FuckingFast 直链提取器（中文版）
 // @namespace    https://github.com/WuLinLee/Direct-link-scraper
-// @version      1.30
+// @version      1.31
 // @description  在受支持的 Paste 页面解析、筛选并导出 FuckingFast 链接。
 // @match        https://paste.fitgirl-repacks.site/*
 // @run-at       document-idle
@@ -17,7 +17,7 @@
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   const style = document.createElement('style');
-  style.textContent = \`
+  style.textContent = `
     #ff-scraper{position:fixed;right:24px;bottom:24px;z-index:2147483647;display:flex;flex-direction:column;width:min(900px,calc(100vw - 48px));max-height:min(90vh,920px);overflow:hidden;color:#e8eef7;background:#0c1422;border:1px solid #30425b;border-radius:20px;box-shadow:0 28px 80px #020617bb,0 0 0 1px #ffffff08;font:14px/1.5 system-ui,sans-serif}
     #ff-scraper *{box-sizing:border-box}
     #ff-scraper .head{display:flex;flex:none;gap:15px;align-items:center;padding:21px 24px;background:#111c2d;border-bottom:1px solid #26364b}
@@ -102,7 +102,7 @@
       #ff-scraper .tabs button{flex:1;padding:0 7px}
     }
     @media(prefers-reduced-motion:reduce){#ff-scraper .progress,#ff-scraper button{transition:none}}
-  \`;
+  `;
 
   document.head.appendChild(style);
 
@@ -255,7 +255,7 @@
     direct
       .map((link, i) => ({ link, index: i }))
       .filter(({ link, index }) => link && !link.startsWith('# FAILED') && selected.has(index))
-      .map(({ link, index }) => \`文件名：\${filename(index)}\n\${link}\`)
+      .map(({ link, index }) => `文件名：${filename(index)}\n${link}`)
       .join(LINK_SEPARATOR);
 
   const displayOutput = () =>
@@ -264,8 +264,8 @@
         if (!link) return '';
         const name = filename(i);
         return link.startsWith('# FAILED')
-          ? \`文件名：\${name}\n\${link.replace(/^# FAILED\s*/, '解析失败：')}\`
-          : \`文件名：\${name}\n\${link}\`;
+          ? `文件名：${name}\n${link.replace(/^# FAILED\s*/, '解析失败：')}`
+          : `文件名：${name}\n${link}`;
       })
       .filter(Boolean)
       .join(LINK_SEPARATOR);
