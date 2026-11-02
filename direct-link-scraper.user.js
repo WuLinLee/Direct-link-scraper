@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Paste → FuckingFast 直链提取器（中文版）
 // @namespace    https://github.com/WuLinLee/Direct-link-scraper
-// @version      1.33
+// @version      1.34
 // @description  在受支持的 Paste 页面解析、筛选并导出 FuckingFast 链接。
 // @match        https://paste.fitgirl-repacks.site/*
 // @run-at       document-idle
@@ -274,7 +274,7 @@
       ]);
 
     if (lines.length) lines.push(divider);
-    return lines.join('\\n');
+    return lines.join('\n');
   };
 
   const displayOutput = () =>
