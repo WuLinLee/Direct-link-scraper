@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Paste → FuckingFast 直链提取器（中文版）
 // @namespace    https://github.com/WuLinLee/Direct-link-scraper
-// @version      1.20
+// @version      1.30
 // @description  在受支持的 Paste 页面解析、筛选并导出 FuckingFast 链接。
 // @match        https://paste.fitgirl-repacks.site/*
 // @run-at       document-idle
@@ -31,6 +31,11 @@
     #ff-scraper .action-block{padding:14px 16px;background:#111c2d;border:1px solid #26364b;border-radius:13px}
     #ff-scraper .section-label{margin-bottom:10px;color:#8195ad;font-size:11px;font-weight:750;letter-spacing:.08em;text-transform:uppercase}
     #ff-scraper .action-group{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    #ff-scraper .single-copy{display:flex;gap:10px;align-items:center;min-width:0}
+    #ff-scraper .single-name{flex:1;min-width:0;overflow:hidden;color:#e8eef7;font-weight:650;text-overflow:ellipsis;white-space:nowrap}
+    #ff-scraper .single-position{flex:none;color:#8195ad;font-size:12px;font-variant-numeric:tabular-nums}
+    #ff-scraper .single-nav{display:grid;gap:4px;flex:none}
+    #ff-scraper .single-nav button{width:32px;min-height:25px;height:25px;padding:0;font-size:11px;line-height:1}
     #ff-scraper .filter-row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:16px;padding:14px 16px;background:#111c2d;border:1px solid #26364b;border-radius:13px}
     #ff-scraper button,#ff-scraper input,#ff-scraper select{font:600 14px system-ui,sans-serif}
     #ff-scraper button{min-height:42px;padding:0 16px;color:#dce7f5;background:#1b293d;border:1px solid #3a4d66;border-radius:9px;cursor:pointer;transition:background 120ms ease,border-color 120ms ease}
@@ -128,8 +133,20 @@
               <input class="speed" id="speed" type="number" min="1" max="50" value="4" aria-label="并发请求数" title="同时处理的链接数量，建议保持 4">
             </label>
             <button class="info" type="button" title="如果解析速度较慢，可以适当提高并发数。数值越大，同时发送的请求越多。建议保持默认值 4。" aria-label="并发请求说明">i</button>
-            <button id="copy" disabled>复制已选链接</button>
+            <button id="copy" disabled>批量复制已选</button>
             <button id="save" disabled>导出 TXT</button>
+          </div>
+        </div>
+        <div class="action-block">
+          <div class="section-label">单条复制</div>
+          <div class="single-copy">
+            <div class="single-name" id="single-name">暂无可复制链接</div>
+            <div class="single-position" id="single-position">0 / 0</div>
+            <div class="single-nav" aria-label="切换链接">
+              <button id="single-prev" type="button" aria-label="上一条链接" title="上一条" disabled>▲</button>
+              <button id="single-next" type="button" aria-label="下一条链接" title="下一条" disabled>▼</button>
+            </div>
+            <button class="primary" id="single-copy" disabled>复制当前直链</button>
           </div>
         </div>
       </div>
@@ -185,6 +202,11 @@
   const autoCopy = $('auto-copy');
   const copy = $('copy');
   const save = $('save');
+  const singleName = $('single-name');
+  const singlePosition = $('single-position');
+  const singlePrev = $('single-prev');
+  const singleNext = $('single-next');
+  const singleCopy = $('single-copy');
 
   const status = $('status');
   const count = $('count');
@@ -200,6 +222,7 @@
   let shares = [];
   let direct = [];
   let selected = new Set();
+  let singleCopyIndex = -1;
   let runId = 0;
   let running = false;
   const activeRequests = new Set();
@@ -219,6 +242,11 @@
 
   const selectedLinks = () =>
     direct.filter((x, i) => x && !x.startsWith('# FAILED') && selected.has(i));
+
+  const availableIndexes = () =>
+    direct.map((link, index) => ({ link, index }))
+      .filter(({ link }) => link && !link.startsWith('# FAILED'))
+      .map(({ index }) => index);
 
   const formattedSelectedLinks = () =>
     direct
@@ -323,6 +351,7 @@
     readyCount.textContent = ready().length;
     selectedCount.textContent = selectedLinks().length;
     failedCount.textContent = direct.filter(x => x && x.startsWith('# FAILED')).length;
+    renderSingleCopy();
 
     requestAnimationFrame(() => {
       rows.scrollTop = rows.scrollHeight;
@@ -334,6 +363,46 @@
     copy.disabled = !has;
     save.disabled = !has;
     selectedCount.textContent = selectedLinks().length;
+    renderSingleCopy();
+  }
+
+  function renderSingleCopy() {
+    const indexes = availableIndexes();
+
+    if (!indexes.length) {
+      singleCopyIndex = -1;
+      singleName.textContent = running ? '正在等待解析结果…' : '暂无可复制链接';
+      singlePosition.textContent = '0 / 0';
+      singlePrev.disabled = true;
+      singleNext.disabled = true;
+      singleCopy.disabled = true;
+      return;
+    }
+
+    let position = indexes.indexOf(singleCopyIndex);
+    if (position < 0) {
+      singleCopyIndex = indexes[0];
+      position = 0;
+    }
+
+    singleName.textContent = `文件名：${filename(singleCopyIndex)}`;
+    singleName.title = filename(singleCopyIndex);
+    singlePosition.textContent = `${position + 1} / ${indexes.length}`;
+    singlePrev.disabled = position === 0;
+    singleNext.disabled = position === indexes.length - 1;
+    singleCopy.disabled = false;
+  }
+
+  function moveSingleCopy(direction) {
+    const indexes = availableIndexes();
+    if (!indexes.length) return;
+
+    let position = indexes.indexOf(singleCopyIndex);
+    if (position < 0) position = 0;
+
+    position = Math.max(0, Math.min(indexes.length - 1, position + direction));
+    singleCopyIndex = indexes[position];
+    renderSingleCopy();
   }
 
   function setView(view) {
@@ -360,6 +429,27 @@
     abortActiveRequests();
     style.remove();
     root.remove();
+  };
+
+  singlePrev.onclick = () => moveSingleCopy(-1);
+  singleNext.onclick = () => moveSingleCopy(1);
+
+  singleCopy.onclick = async () => {
+    const link = direct[singleCopyIndex];
+    if (!link || link.startsWith('# FAILED')) return;
+
+    try {
+      await navigator.clipboard.writeText(link);
+      singleCopy.textContent = '已复制当前直链';
+      setTimeout(() => {
+        singleCopy.textContent = '复制当前直链';
+      }, 1400);
+    } catch {
+      singleCopy.textContent = '复制失败';
+      setTimeout(() => {
+        singleCopy.textContent = '复制当前直链';
+      }, 1400);
+    }
   };
 
   copy.onclick = async () => {
@@ -587,6 +677,7 @@
       shares = found;
       direct = new Array(found.length);
       selected = new Set(found.map((_, i) => i));
+      singleCopyIndex = -1;
       output.value = '';
       render();
     }
