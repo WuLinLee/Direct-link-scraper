@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Paste → FuckingFast 直链提取器（中文版）
 // @namespace    https://github.com/WuLinLee/Direct-link-scraper
-// @version      1.32
+// @version      1.33
 // @description  在受支持的 Paste 页面解析、筛选并导出 FuckingFast 链接。
 // @match        https://paste.fitgirl-repacks.site/*
 // @run-at       document-idle
@@ -261,12 +261,21 @@
       .filter(({ link }) => link && !link.startsWith('# FAILED'))
       .map(({ index }) => index);
 
-  const formattedSelectedLinks = () =>
-    direct
-      .map((link, i) => ({ link, index: i }))
+  const formattedSelectedLinks = () => {
+    const divider = '-------------------------------------------------------------------------------------';
+    const lines = direct
+      .map((link, index) => ({ link, index }))
       .filter(({ link, index }) => link && !link.startsWith('# FAILED') && selected.has(index))
-      .map(({ link, index }) => `文件名：${filename(index)}\n${link}`)
-      .join(LINK_SEPARATOR);
+      .flatMap(({ link, index }) => [
+        divider,
+        `文件名：${filename(index)}`,
+        divider,
+        link
+      ]);
+
+    if (lines.length) lines.push(divider);
+    return lines.join('\\n');
+  };
 
   const displayOutput = () =>
     direct
