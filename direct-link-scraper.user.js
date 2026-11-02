@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Paste → FuckingFast 直链提取器（中文版）
 // @namespace    https://github.com/WuLinLee/Direct-link-scraper
-// @version      1.10
+// @version      1.20
 // @description  在受支持的 Paste 页面解析、筛选并导出 FuckingFast 链接。
 // @match        https://paste.fitgirl-repacks.site/*
 // @run-at       document-idle
@@ -17,34 +17,84 @@
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   const style = document.createElement('style');
-  style.textContent = `
-    #ff-scraper{position:fixed;right:20px;bottom:20px;z-index:2147483647;width:min(760px,calc(100vw - 32px));max-height:calc(100vh - 40px);overflow:auto;color:#e8eef7;background:#0c1422;border:1px solid #30425b;border-radius:18px;box-shadow:0 28px 80px #020617bb,0 0 0 1px #ffffff08;font:14px/1.45 system-ui,sans-serif}
-    #ff-scraper *{box-sizing:border-box} #ff-scraper .head{display:flex;gap:13px;align-items:center;padding:18px 20px;background:#111c2d;border-bottom:1px solid #26364b}
-    #ff-scraper .mark{display:grid;place-items:center;flex:none;width:38px;height:38px;color:#07131d;background:#67e8f9;border-radius:11px;font-weight:900;box-shadow:0 8px 22px #22d3ee33}
-    #ff-scraper h2{margin:0;font-size:16px;line-height:1.25;letter-spacing:-.015em} #ff-scraper .sub{margin:3px 0 0;color:#93a4ba;font-size:12px}
-    #ff-scraper .close{margin-left:auto;width:32px;min-height:32px;padding:0;color:#9fb0c5;background:transparent;border:0;border-radius:7px;font-size:20px;cursor:pointer}
-    #ff-scraper .close:hover{color:#fff;background:#26364b} #ff-scraper .body{padding:18px 20px 16px}
-    #ff-scraper .actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-    #ff-scraper .action-group{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
-    #ff-scraper .filter-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;padding:10px;background:#111c2d;border:1px solid #26364b;border-radius:11px}
-    #ff-scraper button,#ff-scraper input,#ff-scraper select{font:600 13px system-ui,sans-serif}
-    #ff-scraper button{min-height:36px;padding:0 12px;color:#dce7f5;background:#1b293d;border:1px solid #3a4d66;border-radius:8px;cursor:pointer}
-    #ff-scraper button:hover:not(:disabled){background:#263b55;border-color:#66809e} #ff-scraper button:disabled{opacity:.45;cursor:not-allowed}
+  style.textContent = \`
+    #ff-scraper{position:fixed;right:24px;bottom:24px;z-index:2147483647;display:flex;flex-direction:column;width:min(900px,calc(100vw - 48px));max-height:min(90vh,920px);overflow:hidden;color:#e8eef7;background:#0c1422;border:1px solid #30425b;border-radius:20px;box-shadow:0 28px 80px #020617bb,0 0 0 1px #ffffff08;font:14px/1.5 system-ui,sans-serif}
+    #ff-scraper *{box-sizing:border-box}
+    #ff-scraper .head{display:flex;flex:none;gap:15px;align-items:center;padding:21px 24px;background:#111c2d;border-bottom:1px solid #26364b}
+    #ff-scraper .mark{display:grid;place-items:center;flex:none;width:44px;height:44px;color:#07131d;background:#67e8f9;border-radius:13px;font-size:19px;font-weight:900;box-shadow:0 8px 22px #22d3ee33}
+    #ff-scraper h2{margin:0;font-size:18px;line-height:1.3;letter-spacing:-.015em}
+    #ff-scraper .sub{margin:5px 0 0;color:#93a4ba;font-size:13px}
+    #ff-scraper .close{margin-left:auto;width:38px;min-height:38px;padding:0;color:#9fb0c5;background:transparent;border:0;border-radius:9px;font-size:23px;cursor:pointer}
+    #ff-scraper .close:hover{color:#fff;background:#26364b}
+    #ff-scraper .body{min-height:0;overflow:auto;padding:22px 24px 18px}
+    #ff-scraper .actions{display:grid;gap:13px;margin-bottom:18px}
+    #ff-scraper .action-block{padding:14px 16px;background:#111c2d;border:1px solid #26364b;border-radius:13px}
+    #ff-scraper .section-label{margin-bottom:10px;color:#8195ad;font-size:11px;font-weight:750;letter-spacing:.08em;text-transform:uppercase}
+    #ff-scraper .action-group{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    #ff-scraper .filter-row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:16px;padding:14px 16px;background:#111c2d;border:1px solid #26364b;border-radius:13px}
+    #ff-scraper button,#ff-scraper input,#ff-scraper select{font:600 14px system-ui,sans-serif}
+    #ff-scraper button{min-height:42px;padding:0 16px;color:#dce7f5;background:#1b293d;border:1px solid #3a4d66;border-radius:9px;cursor:pointer;transition:background 120ms ease,border-color 120ms ease}
+    #ff-scraper button:hover:not(:disabled){background:#263b55;border-color:#66809e}
+    #ff-scraper button:disabled{opacity:.45;cursor:not-allowed}
     #ff-scraper button:focus-visible,#ff-scraper input:focus-visible{outline:2px solid #67e8f9;outline-offset:2px}
-    #ff-scraper .primary{color:#07131d;background:#67e8f9;border-color:#67e8f9} #ff-scraper .primary:hover:not(:disabled){background:#a5f3fc}
-    #ff-scraper .speed{width:82px;min-height:36px;padding:0 8px;color:#dce7f5;background:#0a111d;border:1px solid #3a4d66;border-radius:8px}
-    #ff-scraper .info{width:24px;min-height:24px;padding:0;border-radius:50%;cursor:help}
-    #ff-scraper .filter{flex:1;min-width:180px;min-height:36px;padding:0 10px;color:#dce7f5;background:#0a111d;border:1px solid #3a4d66;border-radius:8px}
-    #ff-scraper .check{display:inline-flex;align-items:center;gap:6px;color:#a9bbcf;font-size:12px;white-space:nowrap} #ff-scraper .check input{accent-color:#67e8f9}
-    #ff-scraper .metrics{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px} #ff-scraper .metric{padding:5px 9px;color:#9fb0c5;background:#111c2d;border:1px solid #26364b;border-radius:7px;font-size:11px} #ff-scraper .metric strong{color:#e8eef7;font-weight:700}
-    #ff-scraper .status{display:flex;justify-content:space-between;gap:12px;margin-bottom:7px;color:#dce7f5;font-size:12px} #ff-scraper .count{color:#67e8f9;white-space:nowrap}
-    #ff-scraper .track{height:4px;margin-bottom:14px;overflow:hidden;background:#26364b;border-radius:99px} #ff-scraper .progress{display:block;width:0;height:100%;background:#67e8f9;transition:width 180ms ease}
-    #ff-scraper .tabs{display:flex;gap:3px;width:max-content;margin-bottom:7px;padding:3px;background:#0a111d;border:1px solid #2b3a50;border-radius:8px}
-    #ff-scraper .tabs button{min-height:30px;padding:0 12px;border:0;color:#93a4ba;background:transparent;font-size:12px} #ff-scraper .tabs button[aria-selected=true]{color:#07131d;background:#67e8f9;box-shadow:0 3px 10px #22d3ee2e}
-    #ff-scraper textarea{display:block;width:100%;min-height:160px;resize:vertical;padding:11px;color:#d9e5f2;background:#0a111d;border:1px solid #2b3a50;border-radius:8px;font:12px/1.55 ui-monospace,monospace}
-    #ff-scraper .list{display:grid;gap:5px;max-height:320px;overflow:auto} #ff-scraper .row{display:flex;align-items:center;gap:9px;min-height:44px;padding:8px 11px;background:#111c2d;border:1px solid #26364b;border-radius:9px} #ff-scraper .row:hover{background:#16243a;border-color:#3b526f} #ff-scraper .row input{accent-color:#67e8f9} #ff-scraper .num{width:26px;color:#71849b;font:11px ui-monospace,monospace} #ff-scraper .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} #ff-scraper .row a,#ff-scraper .mini a{color:#67e8f9;text-decoration:none} #ff-scraper .row a:hover,#ff-scraper .mini a:hover{text-decoration:underline} #ff-scraper .mini{display:flex;flex-wrap:wrap;gap:7px 13px;align-content:flex-start;max-height:320px;overflow:auto;padding:14px;background:#08101c;border:1px solid #26364b;border-radius:10px;font:12px ui-monospace,monospace} #ff-scraper .empty{padding:28px;color:#71849b;text-align:center} #ff-scraper .credit{margin-top:13px;color:#71849b;font-size:11px;text-align:right}
-    @media(max-width:520px){#ff-scraper{right:10px;bottom:10px;width:calc(100vw - 20px)}#ff-scraper .body{padding:14px}#ff-scraper .actions{align-items:stretch}#ff-scraper .action-group{width:100%}}@media(prefers-reduced-motion:reduce){#ff-scraper .progress{transition:none}}
-  `;
+    #ff-scraper .primary{color:#07131d;background:#67e8f9;border-color:#67e8f9}
+    #ff-scraper .primary:hover:not(:disabled){background:#a5f3fc}
+    #ff-scraper .speed-wrap{display:inline-flex;align-items:center;gap:9px;color:#a9bbcf;font-size:13px}
+    #ff-scraper .speed{width:82px;min-height:42px;padding:0 10px;color:#dce7f5;background:#0a111d;border:1px solid #3a4d66;border-radius:9px}
+    #ff-scraper .info{width:28px;min-height:28px;padding:0;border-radius:50%;cursor:help}
+    #ff-scraper .filter{flex:1;min-width:220px;min-height:42px;padding:0 13px;color:#dce7f5;background:#0a111d;border:1px solid #3a4d66;border-radius:9px}
+    #ff-scraper .check{display:inline-flex;align-items:center;gap:8px;color:#a9bbcf;font-size:13px;white-space:nowrap}
+    #ff-scraper .check input{width:16px;height:16px;accent-color:#67e8f9}
+    #ff-scraper .metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:17px}
+    #ff-scraper .metric{padding:11px 14px;color:#9fb0c5;background:#111c2d;border:1px solid #26364b;border-radius:10px;font-size:12px}
+    #ff-scraper .metric strong{display:block;margin-bottom:2px;color:#e8eef7;font-size:19px;font-weight:750;font-variant-numeric:tabular-nums}
+    #ff-scraper .status{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:9px;color:#dce7f5;font-size:13px}
+    #ff-scraper #status{min-width:0}
+    #ff-scraper .count{color:#67e8f9;white-space:nowrap;font-weight:650}
+    #ff-scraper .track{height:6px;margin-bottom:20px;overflow:hidden;background:#26364b;border-radius:99px}
+    #ff-scraper .progress{display:block;width:0;height:100%;background:#67e8f9;border-radius:99px;transition:width 180ms ease}
+    #ff-scraper .result-panel{padding:15px;background:#111c2d;border:1px solid #26364b;border-radius:14px}
+    #ff-scraper .result-head{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+    #ff-scraper .result-title{color:#e8eef7;font-size:14px;font-weight:700}
+    #ff-scraper .tabs{display:flex;gap:4px;width:max-content;max-width:100%;padding:4px;background:#0a111d;border:1px solid #2b3a50;border-radius:9px}
+    #ff-scraper .tabs button{min-height:34px;padding:0 14px;border:0;color:#93a4ba;background:transparent;font-size:12px}
+    #ff-scraper .tabs button[aria-selected=true]{color:#07131d;background:#67e8f9;box-shadow:0 3px 10px #22d3ee2e}
+    #ff-scraper textarea{display:block;width:100%;min-height:260px;resize:vertical;padding:15px;color:#d9e5f2;background:#0a111d;border:1px solid #2b3a50;border-radius:10px;font:12px/1.7 ui-monospace,SFMono-Regular,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+    #ff-scraper .list{display:grid;gap:8px;max-height:430px;overflow:auto}
+    #ff-scraper .row{display:flex;align-items:center;gap:12px;min-height:52px;padding:10px 14px;background:#0d1828;border:1px solid #26364b;border-radius:10px}
+    #ff-scraper .row:hover{background:#16243a;border-color:#3b526f}
+    #ff-scraper .row input{width:16px;height:16px;accent-color:#67e8f9}
+    #ff-scraper .num{width:30px;color:#71849b;font:12px ui-monospace,monospace}
+    #ff-scraper .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    #ff-scraper .row a,#ff-scraper .mini a{color:#67e8f9;text-decoration:none}
+    #ff-scraper .row a:hover,#ff-scraper .mini a:hover{text-decoration:underline}
+    #ff-scraper .mini{display:flex;flex-wrap:wrap;gap:9px;align-content:flex-start;max-height:430px;overflow:auto;padding:15px;background:#0a111d;border:1px solid #26364b;border-radius:10px;font:12px ui-monospace,monospace}
+    #ff-scraper .mini a{max-width:100%;padding:8px 11px;background:#111c2d;border:1px solid #26364b;border-radius:8px;overflow-wrap:anywhere}
+    #ff-scraper .empty{padding:34px 18px;color:#71849b;text-align:center}
+    #ff-scraper .credit{margin-top:14px;color:#71849b;font-size:11px;text-align:right}
+    @media(max-width:640px){
+      #ff-scraper{right:10px;bottom:10px;width:calc(100vw - 20px);max-height:calc(100dvh - 20px);border-radius:16px}
+      #ff-scraper .head{padding:16px 17px}
+      #ff-scraper .body{padding:16px}
+      #ff-scraper .action-block{padding:12px}
+      #ff-scraper .action-group{gap:8px}
+      #ff-scraper .action-group button{flex:1 1 auto}
+      #ff-scraper .filter-row{align-items:stretch;padding:12px}
+      #ff-scraper .filter{min-width:100%;width:100%}
+      #ff-scraper .check{padding:2px 0}
+      #ff-scraper .result-panel{padding:11px}
+      #ff-scraper textarea{min-height:220px}
+      #ff-scraper .status{flex-direction:column;gap:4px}
+      #ff-scraper .count{align-self:flex-end}
+    }
+    @media(max-width:380px){
+      #ff-scraper .metrics{gap:6px}
+      #ff-scraper .metric{padding:9px}
+      #ff-scraper .tabs{width:100%}
+      #ff-scraper .tabs button{flex:1;padding:0 7px}
+    }
+    @media(prefers-reduced-motion:reduce){#ff-scraper .progress,#ff-scraper button{transition:none}}
+  \`;
 
   document.head.appendChild(style);
 
@@ -62,49 +112,61 @@
     </div>
     <div class="body">
       <div class="actions">
-        <div class="action-group">
-          <button class="primary" id="start">提取链接</button>
-          <button id="cancel" disabled>取消</button>
-          <button id="retry" disabled>重试失败项</button>
+        <div class="action-block">
+          <div class="section-label">任务控制</div>
+          <div class="action-group">
+            <button class="primary" id="start">开始提取</button>
+            <button id="cancel" disabled>取消任务</button>
+            <button id="retry" disabled>重试失败项</button>
+          </div>
         </div>
-        <div class="action-group">
-          <input class="speed" id="speed" type="number" min="1" max="50" value="4" aria-label="并发请求数" title="同时处理的链接数量，建议保持 4">
-          <button class="info" type="button" title="如果解析速度较慢，可以适当提高并发数。数值越大，同时发送的请求越多。建议保持默认值 4。" aria-label="并发请求说明">i</button>
-          <button id="copy" disabled>复制已选链接</button>
-          <button id="save" disabled>导出为 TXT</button>
+        <div class="action-block">
+          <div class="section-label">结果操作</div>
+          <div class="action-group">
+            <label class="speed-wrap">
+              并发数
+              <input class="speed" id="speed" type="number" min="1" max="50" value="4" aria-label="并发请求数" title="同时处理的链接数量，建议保持 4">
+            </label>
+            <button class="info" type="button" title="如果解析速度较慢，可以适当提高并发数。数值越大，同时发送的请求越多。建议保持默认值 4。" aria-label="并发请求说明">i</button>
+            <button id="copy" disabled>复制已选链接</button>
+            <button id="save" disabled>导出 TXT</button>
+          </div>
         </div>
       </div>
 
       <div class="filter-row">
-        <input class="filter" id="filter" type="search" placeholder="按文件名筛选…" aria-label="按文件名筛选">
+        <input class="filter" id="filter" type="search" placeholder="输入文件名进行筛选…" aria-label="按文件名筛选">
         <label class="check">
           <input id="auto-copy" type="checkbox">
-          完成后自动复制
+          提取完成后自动复制已选链接
         </label>
       </div>
 
       <div class="metrics">
-        <span class="metric"><strong id="ready-count">0</strong> 可用</span>
-        <span class="metric"><strong id="selected-count">0</strong> 已选</span>
-        <span class="metric"><strong id="failed-count">0</strong> 失败</span>
+        <div class="metric"><strong id="ready-count">0</strong>可用链接</div>
+        <div class="metric"><strong id="selected-count">0</strong>已选择</div>
+        <div class="metric"><strong id="failed-count">0</strong>解析失败</div>
       </div>
 
       <div class="status">
-        <span id="status" aria-live="polite">请先打开 Paste 页面，再点击“提取链接”。</span>
+        <span id="status" aria-live="polite">请先打开 Paste 页面，再点击“开始提取”。</span>
         <span class="count" id="count">0 个链接</span>
       </div>
-
       <div class="track"><span class="progress" id="progress"></span></div>
 
-      <div class="tabs" role="tablist">
-        <button role="tab" data-view="text" aria-selected="true">文本</button>
-        <button role="tab" data-view="rows" aria-selected="false">列表</button>
-        <button role="tab" data-view="mini" aria-selected="false">链接预览</button>
+      <div class="result-panel">
+        <div class="result-head">
+          <div class="result-title">解析结果</div>
+          <div class="tabs" role="tablist" aria-label="结果显示方式">
+            <button role="tab" data-view="text" aria-selected="true">文本</button>
+            <button role="tab" data-view="rows" aria-selected="false">文件列表</button>
+            <button role="tab" data-view="mini" aria-selected="false">链接预览</button>
+          </div>
+        </div>
+        <textarea id="output" readonly spellcheck="false" placeholder="解析结果会显示在这里；每条记录会标注文件名，并用横线分隔。"></textarea>
+        <div class="list" id="rows" hidden></div>
+        <div class="mini" id="mini" hidden></div>
       </div>
-
-      <textarea id="output" readonly spellcheck="false" placeholder="解析成功的下载直链会显示在这里…"></textarea>
-      <div class="list" id="rows" hidden></div>
-      <div class="mini" id="mini" hidden></div>
 
       <div class="credit">AnonTooler 制作 🏴‍☠️</div>
     </div>
@@ -153,15 +215,29 @@
 
   const ready = () => direct.filter(x => x && !x.startsWith('# FAILED'));
 
+  const LINK_SEPARATOR = '\n-------------------------------------------------------------------------------------\n';
+
   const selectedLinks = () =>
     direct.filter((x, i) => x && !x.startsWith('# FAILED') && selected.has(i));
 
+  const formattedSelectedLinks = () =>
+    direct
+      .map((link, i) => ({ link, index: i }))
+      .filter(({ link, index }) => link && !link.startsWith('# FAILED') && selected.has(index))
+      .map(({ link, index }) => \`文件名：\${filename(index)}\n\${link}\`)
+      .join(LINK_SEPARATOR);
+
   const displayOutput = () =>
-    direct.filter(Boolean).map(x =>
-      x.startsWith('# FAILED')
-        ? x.replace(/^# FAILED\s*/, '解析失败：')
-        : x
-    ).join('\n');
+    direct
+      .map((link, i) => {
+        if (!link) return '';
+        const name = filename(i);
+        return link.startsWith('# FAILED')
+          ? \`文件名：\${name}\n\${link.replace(/^# FAILED\s*/, '解析失败：')}\`
+          : \`文件名：\${name}\n\${link}\`;
+      })
+      .filter(Boolean)
+      .join(LINK_SEPARATOR);
 
   const concurrency = () => {
     const n = Math.max(1, Math.min(50, Number.parseInt(speed.value, 10) || 4));
@@ -288,7 +364,7 @@
 
   copy.onclick = async () => {
     try {
-      await navigator.clipboard.writeText(selectedLinks().join('\n'));
+      await navigator.clipboard.writeText(formattedSelectedLinks());
       copy.textContent = '已复制';
       setTimeout(() => copy.textContent = '复制已选链接', 1400);
     } catch {
@@ -301,7 +377,7 @@
 
     a.href = URL.createObjectURL(
       new Blob(
-        [selectedLinks().join('\n') + '\n'],
+        [formattedSelectedLinks() + '\n'],
         { type: 'text/plain' }
       )
     );
@@ -447,7 +523,7 @@
 
     if (autoCopy.checked && selectedLinks().length) {
       try {
-        await navigator.clipboard.writeText(selectedLinks().join('\n'));
+        await navigator.clipboard.writeText(formattedSelectedLinks());
         status.textContent += ' 已自动复制。';
       } catch {}
     }
