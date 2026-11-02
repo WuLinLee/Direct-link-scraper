@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Paste → FuckingFast 直链提取器（中文版）
 // @namespace    https://github.com/WuLinLee/Direct-link-scraper
-// @version      1.40
+// @version      1.41
 // @description  在受支持的 Paste 页面解析、筛选并导出 FuckingFast 链接。
 // @match        https://paste.fitgirl-repacks.site/*
 // @run-at       document-idle
@@ -262,12 +262,13 @@
   const ready = () => direct.filter(x => x && !x.startsWith('# FAILED'));
 
   const LINK_DIVIDER = '-------------------------------------------------------------------------------------';
+  const FIELD_DIVIDER = '.........................................................................................................................................................';
 
   const formatLinkRecords = records => {
     const lines = records.flatMap(({ link, index, failed = false }) => [
       LINK_DIVIDER,
       '文件名：' + filename(index),
-      LINK_DIVIDER,
+      FIELD_DIVIDER,
       failed ? link.replace(/^# FAILED\s*/, '解析失败：') : link
     ]);
 
