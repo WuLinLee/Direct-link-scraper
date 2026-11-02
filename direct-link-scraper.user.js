@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Paste → FuckingFast 直链提取器（中文版）
 // @namespace    https://github.com/WuLinLee/Direct-link-scraper
-// @version      1.31
+// @version      1.32
 // @description  在受支持的 Paste 页面解析、筛选并导出 FuckingFast 链接。
 // @match        https://paste.fitgirl-repacks.site/*
 // @run-at       document-idle
@@ -18,88 +18,95 @@
 
   const style = document.createElement('style');
   style.textContent = `
-    #ff-scraper{position:fixed;right:24px;bottom:24px;z-index:2147483647;display:flex;flex-direction:column;width:min(900px,calc(100vw - 48px));max-height:min(90vh,920px);overflow:hidden;color:#e8eef7;background:#0c1422;border:1px solid #30425b;border-radius:20px;box-shadow:0 28px 80px #020617bb,0 0 0 1px #ffffff08;font:14px/1.5 system-ui,sans-serif}
+    #ff-scraper{position:fixed;right:22px;bottom:22px;z-index:2147483647;display:flex;flex-direction:column;width:min(940px,calc(100vw - 44px));max-height:min(90vh,940px);overflow:hidden;color:#e8eef7;background:#0c1422;border:1px solid #30425b;border-radius:18px;box-shadow:0 24px 70px #020617c9,0 0 0 1px #ffffff08;font:14px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
     #ff-scraper *{box-sizing:border-box}
-    #ff-scraper .head{display:flex;flex:none;gap:15px;align-items:center;padding:21px 24px;background:#111c2d;border-bottom:1px solid #26364b}
-    #ff-scraper .mark{display:grid;place-items:center;flex:none;width:44px;height:44px;color:#07131d;background:#67e8f9;border-radius:13px;font-size:19px;font-weight:900;box-shadow:0 8px 22px #22d3ee33}
-    #ff-scraper h2{margin:0;font-size:18px;line-height:1.3;letter-spacing:-.015em}
-    #ff-scraper .sub{margin:5px 0 0;color:#93a4ba;font-size:13px}
-    #ff-scraper .close{margin-left:auto;width:38px;min-height:38px;padding:0;color:#9fb0c5;background:transparent;border:0;border-radius:9px;font-size:23px;cursor:pointer}
+    #ff-scraper .head{display:flex;flex:none;gap:13px;align-items:center;padding:16px 20px;background:#111c2d;border-bottom:1px solid #26364b}
+    #ff-scraper .mark{display:grid;place-items:center;flex:none;width:38px;height:38px;color:#07131d;background:#67e8f9;border-radius:11px;font-size:17px;font-weight:900}
+    #ff-scraper h2{margin:0;font-size:17px;line-height:1.25;letter-spacing:-.015em}
+    #ff-scraper .sub{margin:3px 0 0;color:#93a4ba;font-size:12px}
+    #ff-scraper .close{margin-left:auto;width:34px;min-height:34px;padding:0;color:#9fb0c5;background:transparent;border:0;border-radius:8px;font-size:21px;cursor:pointer}
     #ff-scraper .close:hover{color:#fff;background:#26364b}
-    #ff-scraper .body{min-height:0;overflow:auto;padding:22px 24px 18px}
-    #ff-scraper .actions{display:grid;gap:13px;margin-bottom:18px}
-    #ff-scraper .action-block{padding:14px 16px;background:#111c2d;border:1px solid #26364b;border-radius:13px}
-    #ff-scraper .section-label{margin-bottom:10px;color:#8195ad;font-size:11px;font-weight:750;letter-spacing:.08em;text-transform:uppercase}
-    #ff-scraper .action-group{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    #ff-scraper .single-copy{display:flex;gap:10px;align-items:center;min-width:0}
-    #ff-scraper .single-name{flex:1;min-width:0;overflow:hidden;color:#e8eef7;font-weight:650;text-overflow:ellipsis;white-space:nowrap}
-    #ff-scraper .single-position{flex:none;color:#8195ad;font-size:12px;font-variant-numeric:tabular-nums}
-    #ff-scraper .single-nav{display:grid;gap:4px;flex:none}
-    #ff-scraper .single-nav button{width:32px;min-height:25px;height:25px;padding:0;font-size:11px;line-height:1}
-    #ff-scraper .filter-row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:16px;padding:14px 16px;background:#111c2d;border:1px solid #26364b;border-radius:13px}
-    #ff-scraper button,#ff-scraper input,#ff-scraper select{font:600 14px system-ui,sans-serif}
-    #ff-scraper button{min-height:42px;padding:0 16px;color:#dce7f5;background:#1b293d;border:1px solid #3a4d66;border-radius:9px;cursor:pointer;transition:background 120ms ease,border-color 120ms ease}
+    #ff-scraper .body{min-height:0;overflow:auto;padding:16px 20px 14px}
+    #ff-scraper .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
+    #ff-scraper .action-block{min-width:0;padding:12px 14px;background:#111c2d;border:1px solid #26364b;border-radius:12px}
+    #ff-scraper .action-block:nth-child(3){grid-column:1/-1}
+    #ff-scraper .section-label{margin-bottom:8px;color:#91a4bb;font-size:10px;font-weight:750;letter-spacing:.09em;text-transform:uppercase}
+    #ff-scraper .action-group{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    #ff-scraper button,#ff-scraper input,#ff-scraper select{font:600 13px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    #ff-scraper button{min-height:38px;padding:0 13px;color:#dce7f5;background:#1b293d;border:1px solid #3a4d66;border-radius:8px;cursor:pointer;transition:background 120ms ease,border-color 120ms ease}
     #ff-scraper button:hover:not(:disabled){background:#263b55;border-color:#66809e}
-    #ff-scraper button:disabled{opacity:.45;cursor:not-allowed}
+    #ff-scraper button:disabled{opacity:.4;cursor:not-allowed}
     #ff-scraper button:focus-visible,#ff-scraper input:focus-visible{outline:2px solid #67e8f9;outline-offset:2px}
     #ff-scraper .primary{color:#07131d;background:#67e8f9;border-color:#67e8f9}
     #ff-scraper .primary:hover:not(:disabled){background:#a5f3fc}
-    #ff-scraper .speed-wrap{display:inline-flex;align-items:center;gap:9px;color:#a9bbcf;font-size:13px}
-    #ff-scraper .speed{width:82px;min-height:42px;padding:0 10px;color:#dce7f5;background:#0a111d;border:1px solid #3a4d66;border-radius:9px}
-    #ff-scraper .info{width:28px;min-height:28px;padding:0;border-radius:50%;cursor:help}
-    #ff-scraper .filter{flex:1;min-width:220px;min-height:42px;padding:0 13px;color:#dce7f5;background:#0a111d;border:1px solid #3a4d66;border-radius:9px}
-    #ff-scraper .check{display:inline-flex;align-items:center;gap:8px;color:#a9bbcf;font-size:13px;white-space:nowrap}
-    #ff-scraper .check input{width:16px;height:16px;accent-color:#67e8f9}
-    #ff-scraper .metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:17px}
-    #ff-scraper .metric{padding:11px 14px;color:#9fb0c5;background:#111c2d;border:1px solid #26364b;border-radius:10px;font-size:12px}
-    #ff-scraper .metric strong{display:block;margin-bottom:2px;color:#e8eef7;font-size:19px;font-weight:750;font-variant-numeric:tabular-nums}
-    #ff-scraper .status{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:9px;color:#dce7f5;font-size:13px}
-    #ff-scraper #status{min-width:0}
-    #ff-scraper .count{color:#67e8f9;white-space:nowrap;font-weight:650}
-    #ff-scraper .track{height:6px;margin-bottom:20px;overflow:hidden;background:#26364b;border-radius:99px}
+    #ff-scraper .speed-wrap{display:inline-flex;align-items:center;gap:7px;color:#a9bbcf;font-size:12px}
+    #ff-scraper .speed{width:64px;min-height:38px;padding:0 9px;color:#dce7f5;background:#0a111d;border:1px solid #3a4d66;border-radius:8px}
+    #ff-scraper .info{width:25px;min-height:25px;padding:0;border-radius:50%;font-size:12px}
+    #ff-scraper .single-copy{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:12px;align-items:center;min-width:0}
+    #ff-scraper .single-file{min-width:0}
+    #ff-scraper .single-file-label{display:block;margin-bottom:3px;color:#8195ad;font-size:10px;letter-spacing:.04em}
+    #ff-scraper .single-name{display:block;min-width:0;overflow:hidden;color:#f0f6ff;font-size:13px;font-weight:650;text-overflow:ellipsis;white-space:nowrap}
+    #ff-scraper .single-position{flex:none;color:#9fb0c5;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+    #ff-scraper .single-nav{display:flex;gap:5px;flex:none}
+    #ff-scraper .single-nav button{width:32px;min-height:32px;height:32px;padding:0;font-size:12px}
+    #ff-scraper .single-copy>button{white-space:nowrap}
+    #ff-scraper .filter-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;margin-bottom:12px;padding:10px 13px;background:#111c2d;border:1px solid #26364b;border-radius:11px}
+    #ff-scraper .filter{width:100%;min-width:0;min-height:38px;padding:0 12px;color:#dce7f5;background:#0a111d;border:1px solid #3a4d66;border-radius:8px;font-size:13px}
+    #ff-scraper .check{display:inline-flex;align-items:center;gap:7px;color:#a9bbcf;font-size:12px;white-space:nowrap}
+    #ff-scraper .check input{width:15px;height:15px;margin:0;accent-color:#67e8f9}
+    #ff-scraper .metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+    #ff-scraper .metric{display:flex;align-items:center;gap:8px;min-width:0;padding:8px 11px;color:#9fb0c5;background:#111c2d;border:1px solid #26364b;border-radius:9px;font-size:11px}
+    #ff-scraper .metric strong{color:#e8eef7;font-size:17px;font-weight:750;font-variant-numeric:tabular-nums}
+    #ff-scraper .status{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:7px;color:#dce7f5;font-size:12px}
+    #ff-scraper #status{min-width:0;overflow-wrap:anywhere}
+    #ff-scraper .count{flex:none;color:#67e8f9;font-size:11px;font-weight:650;white-space:nowrap}
+    #ff-scraper .track{height:5px;margin-bottom:13px;overflow:hidden;background:#26364b;border-radius:99px}
     #ff-scraper .progress{display:block;width:0;height:100%;background:#67e8f9;border-radius:99px;transition:width 180ms ease}
-    #ff-scraper .result-panel{padding:15px;background:#111c2d;border:1px solid #26364b;border-radius:14px}
-    #ff-scraper .result-head{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
-    #ff-scraper .result-title{color:#e8eef7;font-size:14px;font-weight:700}
-    #ff-scraper .tabs{display:flex;gap:4px;width:max-content;max-width:100%;padding:4px;background:#0a111d;border:1px solid #2b3a50;border-radius:9px}
-    #ff-scraper .tabs button{min-height:34px;padding:0 14px;border:0;color:#93a4ba;background:transparent;font-size:12px}
-    #ff-scraper .tabs button[aria-selected=true]{color:#07131d;background:#67e8f9;box-shadow:0 3px 10px #22d3ee2e}
-    #ff-scraper textarea{display:block;width:100%;min-height:260px;resize:vertical;padding:15px;color:#d9e5f2;background:#0a111d;border:1px solid #2b3a50;border-radius:10px;font:12px/1.7 ui-monospace,SFMono-Regular,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
-    #ff-scraper .list{display:grid;gap:8px;max-height:430px;overflow:auto}
-    #ff-scraper .row{display:flex;align-items:center;gap:12px;min-height:52px;padding:10px 14px;background:#0d1828;border:1px solid #26364b;border-radius:10px}
+    #ff-scraper .result-panel{padding:12px;background:#111c2d;border:1px solid #26364b;border-radius:12px}
+    #ff-scraper .result-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+    #ff-scraper .result-title{color:#e8eef7;font-size:13px;font-weight:700}
+    #ff-scraper .tabs{display:flex;gap:3px;width:max-content;max-width:100%;padding:3px;background:#0a111d;border:1px solid #2b3a50;border-radius:8px}
+    #ff-scraper .tabs button{min-height:30px;padding:0 12px;border:0;color:#93a4ba;background:transparent;font-size:11px}
+    #ff-scraper .tabs button[aria-selected=true]{color:#07131d;background:#67e8f9}
+    #ff-scraper textarea{display:block;width:100%;min-height:230px;resize:vertical;padding:13px;color:#d9e5f2;background:#0a111d;border:1px solid #2b3a50;border-radius:9px;font:12px/1.65 ui-monospace,SFMono-Regular,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+    #ff-scraper .list{display:grid;gap:7px;max-height:380px;overflow:auto}
+    #ff-scraper .row{display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 11px;background:#0d1828;border:1px solid #26364b;border-radius:9px}
     #ff-scraper .row:hover{background:#16243a;border-color:#3b526f}
-    #ff-scraper .row input{width:16px;height:16px;accent-color:#67e8f9}
-    #ff-scraper .num{width:30px;color:#71849b;font:12px ui-monospace,monospace}
+    #ff-scraper .row input{width:15px;height:15px;margin:0;accent-color:#67e8f9}
+    #ff-scraper .num{width:25px;color:#71849b;font:11px ui-monospace,monospace}
     #ff-scraper .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     #ff-scraper .row a,#ff-scraper .mini a{color:#67e8f9;text-decoration:none}
     #ff-scraper .row a:hover,#ff-scraper .mini a:hover{text-decoration:underline}
-    #ff-scraper .mini{display:flex;flex-wrap:wrap;gap:9px;align-content:flex-start;max-height:430px;overflow:auto;padding:15px;background:#0a111d;border:1px solid #26364b;border-radius:10px;font:12px ui-monospace,monospace}
-    #ff-scraper .mini a{max-width:100%;padding:8px 11px;background:#111c2d;border:1px solid #26364b;border-radius:8px;overflow-wrap:anywhere}
-    #ff-scraper .empty{padding:34px 18px;color:#71849b;text-align:center}
-    #ff-scraper .credit{margin-top:14px;color:#71849b;font-size:11px;text-align:right}
-    @media(max-width:640px){
-      #ff-scraper{right:10px;bottom:10px;width:calc(100vw - 20px);max-height:calc(100dvh - 20px);border-radius:16px}
-      #ff-scraper .head{padding:16px 17px}
-      #ff-scraper .body{padding:16px}
-      #ff-scraper .action-block{padding:12px}
-      #ff-scraper .action-group{gap:8px}
+    #ff-scraper .mini{display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;max-height:380px;overflow:auto;padding:12px;background:#0a111d;border:1px solid #26364b;border-radius:9px;font:12px ui-monospace,monospace}
+    #ff-scraper .mini a{max-width:100%;padding:7px 10px;background:#111c2d;border:1px solid #26364b;border-radius:7px;overflow-wrap:anywhere}
+    #ff-scraper .empty{padding:28px 16px;color:#71849b;text-align:center}
+    #ff-scraper .credit{margin-top:10px;color:#71849b;font-size:10px;text-align:right}
+    @media(max-width:720px){
+      #ff-scraper{right:10px;bottom:10px;width:calc(100vw - 20px);max-height:calc(100dvh - 20px);border-radius:15px}
+      #ff-scraper .head{padding:13px 15px}
+      #ff-scraper .body{padding:12px}
+      #ff-scraper .actions{grid-template-columns:1fr;gap:8px}
+      #ff-scraper .action-block{padding:10px 12px}
+      #ff-scraper .action-block:nth-child(3){grid-column:auto}
+      #ff-scraper .action-group{gap:6px}
       #ff-scraper .action-group button{flex:1 1 auto}
-      #ff-scraper .filter-row{align-items:stretch;padding:12px}
-      #ff-scraper .filter{min-width:100%;width:100%}
-      #ff-scraper .single-copy{flex-wrap:wrap}
-      #ff-scraper .single-name{flex:1 1 calc(100% - 90px)}
-      #ff-scraper .single-copy>button{flex:1 1 150px}
-      #ff-scraper .check{padding:2px 0}
-      #ff-scraper .result-panel{padding:11px}
-      #ff-scraper textarea{min-height:220px}
-      #ff-scraper .status{flex-direction:column;gap:4px}
+      #ff-scraper .single-copy{grid-template-columns:minmax(0,1fr) auto;gap:8px}
+      #ff-scraper .single-position{grid-column:2;grid-row:1}
+      #ff-scraper .single-nav{grid-column:1;grid-row:2}
+      #ff-scraper .single-copy>button{grid-column:2;grid-row:2}
+      #ff-scraper .filter-row{grid-template-columns:1fr;gap:8px;padding:9px 11px}
+      #ff-scraper .check{white-space:normal}
+      #ff-scraper .status{align-items:flex-start;flex-direction:column;gap:3px}
       #ff-scraper .count{align-self:flex-end}
+      #ff-scraper textarea{min-height:190px}
     }
-    @media(max-width:380px){
-      #ff-scraper .metrics{gap:6px}
-      #ff-scraper .metric{padding:9px}
+    @media(max-width:390px){
+      #ff-scraper .metrics{gap:5px}
+      #ff-scraper .metric{gap:5px;padding:7px 8px;font-size:10px}
+      #ff-scraper .metric strong{font-size:15px}
       #ff-scraper .tabs{width:100%}
-      #ff-scraper .tabs button{flex:1;padding:0 7px}
+      #ff-scraper .tabs button{flex:1;padding:0 6px}
+      #ff-scraper .single-copy>button{padding:0 9px;font-size:12px}
     }
     @media(prefers-reduced-motion:reduce){#ff-scraper .progress,#ff-scraper button{transition:none}}
   `;
@@ -129,13 +136,13 @@
           </div>
         </div>
         <div class="action-block">
-          <div class="section-label">结果操作</div>
+          <div class="section-label">批量操作</div>
           <div class="action-group">
             <label class="speed-wrap">
               并发数
-              <input class="speed" id="speed" type="number" min="1" max="50" value="4" aria-label="并发请求数" title="同时处理的链接数量，建议保持 4">
+              <input class="speed" id="speed" type="number" min="1" max="50" value="4" aria-label="并发请求数" title="建议保持默认值 4">
             </label>
-            <button class="info" type="button" title="如果解析速度较慢，可以适当提高并发数。数值越大，同时发送的请求越多。建议保持默认值 4。" aria-label="并发请求说明">i</button>
+            <button class="info" type="button" title="同时处理的链接数量。数值越大，请求越集中，建议保持默认值 4。" aria-label="并发请求说明">i</button>
             <button id="copy" disabled>批量复制已选</button>
             <button id="save" disabled>导出 TXT</button>
           </div>
@@ -143,7 +150,10 @@
         <div class="action-block">
           <div class="section-label">单条复制</div>
           <div class="single-copy">
-            <div class="single-name" id="single-name">暂无可复制链接</div>
+            <div class="single-file">
+              <span class="single-file-label">当前文件</span>
+              <span class="single-name" id="single-name">暂无可复制链接</span>
+            </div>
             <div class="single-position" id="single-position">0 / 0</div>
             <div class="single-nav" aria-label="切换链接">
               <button id="single-prev" type="button" aria-label="上一条链接" title="上一条" disabled>▲</button>
@@ -388,7 +398,7 @@
       position = 0;
     }
 
-    singleName.textContent = `文件名：${filename(singleCopyIndex)}`;
+    singleName.textContent = filename(singleCopyIndex);
     singleName.title = filename(singleCopyIndex);
     singlePosition.textContent = `${position + 1} / ${indexes.length}`;
     singlePrev.disabled = position === 0;
