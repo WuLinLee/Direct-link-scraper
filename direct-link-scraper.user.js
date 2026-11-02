@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Paste → FuckingFast 直链提取器（中文版）
 // @namespace    https://github.com/WuLinLee/Direct-link-scraper
-// @version      1.37
+// @version      1.38
 // @description  在受支持的 Paste 页面解析、筛选并导出 FuckingFast 链接。
 // @match        https://paste.fitgirl-repacks.site/*
 // @run-at       document-idle
@@ -462,18 +462,9 @@
     const link = direct[singleCopyIndex];
     if (!link || link.startsWith('# FAILED')) return;
 
-    const divider = '-------------------------------------------------------------------------------------';
-    const content = [
-      divider,
-      `文件名：${filename(singleCopyIndex)}`,
-      divider,
-      link,
-      divider
-    ].join('\\n');
-
     try {
-      await navigator.clipboard.writeText(content);
-      singleCopy.textContent = '已复制当前文件';
+      await navigator.clipboard.writeText(link);
+      singleCopy.textContent = '已复制当前直链';
       setTimeout(() => {
         singleCopy.textContent = '复制当前直链';
       }, 1400);
