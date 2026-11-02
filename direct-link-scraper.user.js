@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Paste → FuckingFast 直链提取器（中文版）
 // @namespace    https://github.com/WuLinLee/Direct-link-scraper
-// @version      1.39
+// @version      1.40
 // @description  在受支持的 Paste 页面解析、筛选并导出 FuckingFast 链接。
 // @match        https://paste.fitgirl-repacks.site/*
 // @run-at       document-idle
@@ -66,6 +66,8 @@
     #ff-scraper .result-panel{padding:12px;background:#111c2d;border:1px solid #26364b;border-radius:12px}
     #ff-scraper .result-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
     #ff-scraper .result-title{color:#e8eef7;font-size:13px;font-weight:700}
+    #ff-scraper .result-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    #ff-scraper .copy-output{min-height:30px;padding:0 11px;font-size:11px}
     #ff-scraper .tabs{display:flex;gap:3px;width:max-content;max-width:100%;padding:3px;background:#0a111d;border:1px solid #2b3a50;border-radius:8px}
     #ff-scraper .tabs button{min-height:30px;padding:0 12px;border:0;color:#93a4ba;background:transparent;font-size:11px}
     #ff-scraper .tabs button[aria-selected=true]{color:#07131d;background:#67e8f9}
@@ -78,8 +80,8 @@
     #ff-scraper .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     #ff-scraper .row a,#ff-scraper .mini a{color:#67e8f9;text-decoration:none}
     #ff-scraper .row a:hover,#ff-scraper .mini a:hover{text-decoration:underline}
-    #ff-scraper .mini{display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;max-height:380px;overflow:auto;padding:12px;background:#0a111d;border:1px solid #26364b;border-radius:9px;font:12px ui-monospace,monospace}
-    #ff-scraper .mini a{max-width:100%;padding:7px 10px;background:#111c2d;border:1px solid #26364b;border-radius:7px;overflow-wrap:anywhere}
+    #ff-scraper .mini{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;align-content:start;max-height:260px;overflow:auto;padding:10px;background:#0a111d;border:1px solid #26364b;border-radius:9px;font:12px ui-monospace,monospace}
+    #ff-scraper .mini a{display:block;min-width:0;width:100%;max-width:100%;padding:7px 9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#111c2d;border:1px solid #26364b;border-radius:7px}
     #ff-scraper .empty{padding:28px 16px;color:#71849b;text-align:center}
     #ff-scraper .credit{margin-top:10px;color:#71849b;font-size:10px;text-align:right}
     @media(max-width:720px){
@@ -104,8 +106,10 @@
       #ff-scraper .metrics{gap:5px}
       #ff-scraper .metric{gap:5px;padding:7px 8px;font-size:10px}
       #ff-scraper .metric strong{font-size:15px}
-      #ff-scraper .tabs{width:100%}
+      #ff-scraper .result-tools{width:100%}
+      #ff-scraper .tabs{flex:1;width:auto}
       #ff-scraper .tabs button{flex:1;padding:0 6px}
+      #ff-scraper .mini{grid-template-columns:minmax(0,1fr);max-height:230px}
       #ff-scraper .single-copy>button{padding:0 9px;font-size:12px}
     }
     @media(prefers-reduced-motion:reduce){#ff-scraper .progress,#ff-scraper button{transition:none}}
@@ -189,10 +193,13 @@
       <div class="result-panel">
         <div class="result-head">
           <div class="result-title">解析结果</div>
-          <div class="tabs" role="tablist" aria-label="结果显示方式">
-            <button role="tab" data-view="text" aria-selected="true">文本</button>
-            <button role="tab" data-view="rows" aria-selected="false">文件列表</button>
-            <button role="tab" data-view="mini" aria-selected="false">链接预览</button>
+          <div class="result-tools">
+            <button class="copy-output" id="copy-output" disabled>复制文本</button>
+            <div class="tabs" role="tablist" aria-label="结果显示方式">
+              <button role="tab" data-view="text" aria-selected="true">文本</button>
+              <button role="tab" data-view="rows" aria-selected="false">文件列表</button>
+              <button role="tab" data-view="mini" aria-selected="false">链接预览</button>
+            </div>
           </div>
         </div>
         <textarea id="output" readonly spellcheck="false" placeholder="解析结果会显示在这里；每条记录会标注文件名，并用横线分隔。"></textarea>
@@ -227,6 +234,7 @@
   const count = $('count');
   const progress = $('progress');
   const output = $('output');
+  const copyOutput = $('copy-output');
   const rows = $('rows');
   const mini = $('mini');
 
@@ -356,6 +364,7 @@
         if (selected.has(i)) {
           const m = a.cloneNode(true);
           m.textContent = name;
+          m.title = name;
           mini.append(m);
         }
       }
@@ -379,6 +388,10 @@
     requestAnimationFrame(() => {
       rows.scrollTop = rows.scrollHeight;
     });
+  }
+
+  function updateOutputCopyButton() {
+    copyOutput.disabled = !output.value.trim();
   }
 
   function updateButtons() {
@@ -471,6 +484,24 @@
       singleCopy.textContent = '复制失败';
       setTimeout(() => {
         singleCopy.textContent = '复制当前直链';
+      }, 1400);
+    }
+  };
+
+  copyOutput.onclick = async () => {
+    const text = output.value;
+    if (!text.trim()) return;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      copyOutput.textContent = '已复制文本';
+      setTimeout(() => {
+        copyOutput.textContent = '复制文本';
+      }, 1400);
+    } catch {
+      copyOutput.textContent = '复制失败';
+      setTimeout(() => {
+        copyOutput.textContent = '复制文本';
       }, 1400);
     }
   };
@@ -602,6 +633,7 @@
         done++;
 
         output.value = displayOutput();
+        updateOutputCopyButton();
         render();
 
         progress.style.width = `${(before + done) / shares.length * 100}%`;
@@ -702,6 +734,7 @@
       selected = new Set(found.map((_, i) => i));
       singleCopyIndex = -1;
       output.value = '';
+      updateOutputCopyButton();
       render();
     }
 
