@@ -7,6 +7,8 @@
 // @run-at       document-idle
 // @grant        GM_xmlhttpRequest
 // @connect      fuckingfast.co
+// @license      MIT
+// @homepageURL  https://greasyfork.org/scripts/591597-paste-fast-direct-link-scraper
 // ==/UserScript==
 
 (() => {
