@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Paste → FuckingFast 直链提取器（中文版）
 // @namespace    https://github.com/WuLinLee/Direct-link-scraper
-// @version      1.38
+// @version      1.39
 // @description  在受支持的 Paste 页面解析、筛选并导出 FuckingFast 链接。
 // @match        https://paste.fitgirl-repacks.site/*
 // @run-at       document-idle
@@ -253,43 +253,42 @@
 
   const ready = () => direct.filter(x => x && !x.startsWith('# FAILED'));
 
-  const LINK_SEPARATOR = '\n-------------------------------------------------------------------------------------\n';
+  const LINK_DIVIDER = '-------------------------------------------------------------------------------------';
+
+  const formatLinkRecords = records => {
+    const lines = records.flatMap(({ link, index, failed = false }) => [
+      LINK_DIVIDER,
+      '文件名：' + filename(index),
+      LINK_DIVIDER,
+      failed ? link.replace(/^# FAILED\s*/, '解析失败：') : link
+    ]);
+
+    if (lines.length) lines.push(LINK_DIVIDER);
+    return lines.join('\n');
+  };
 
   const selectedLinks = () =>
-    direct.filter((x, i) => x && !x.startsWith('# FAILED') && selected.has(i));
+    direct
+      .map((link, index) => ({ link, index }))
+      .filter(({ link, index }) => link && !link.startsWith('# FAILED') && selected.has(index));
 
   const availableIndexes = () =>
     direct.map((link, index) => ({ link, index }))
       .filter(({ link }) => link && !link.startsWith('# FAILED'))
       .map(({ index }) => index);
 
-  const formattedSelectedLinks = () => {
-    const divider = '-------------------------------------------------------------------------------------';
-    const lines = direct
-      .map((link, index) => ({ link, index }))
-      .filter(({ link, index }) => link && !link.startsWith('# FAILED') && selected.has(index))
-      .flatMap(({ link, index }) => [
-        divider,
-        `文件名：${filename(index)}`,
-        divider,
-        link
-      ]);
-
-    if (lines.length) lines.push(divider);
-    return lines.join('\n');
-  };
+  const formattedSelectedLinks = () => formatLinkRecords(selectedLinks());
 
   const displayOutput = () =>
-    direct
-      .map((link, i) => {
-        if (!link) return '';
-        const name = filename(i);
-        return link.startsWith('# FAILED')
-          ? `文件名：${name}\n${link.replace(/^# FAILED\s*/, '解析失败：')}`
-          : `文件名：${name}\n${link}`;
-      })
-      .filter(Boolean)
-      .join(LINK_SEPARATOR);
+    formatLinkRecords(
+      direct
+        .map((link, index) => ({
+          link,
+          index,
+          failed: Boolean(link && link.startsWith('# FAILED'))
+        }))
+        .filter(({ link }) => Boolean(link))
+    );
 
   const concurrency = () => {
     const n = Math.max(1, Math.min(50, Number.parseInt(speed.value, 10) || 4));
