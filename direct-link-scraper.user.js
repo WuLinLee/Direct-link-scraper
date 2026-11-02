@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Paste → FuckingFast 直链提取器（中文版）
 // @namespace    https://github.com/WuLinLee/Direct-link-scraper
-// @version      1.36
+// @version      1.37
 // @description  在受支持的 Paste 页面解析、筛选并导出 FuckingFast 链接。
 // @match        https://paste.fitgirl-repacks.site/*
 // @run-at       document-idle
@@ -42,13 +42,14 @@
     #ff-scraper .speed-wrap{display:inline-flex;align-items:center;gap:7px;color:#a9bbcf;font-size:12px}
     #ff-scraper .speed{width:64px;min-height:38px;padding:0 9px;color:#dce7f5;background:#0a111d;border:1px solid #3a4d66;border-radius:8px}
     #ff-scraper .info{width:25px;min-height:25px;padding:0;border-radius:50%;font-size:12px}
-    #ff-scraper .single-copy{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:10px;align-items:center;min-width:0}
+    #ff-scraper .single-copy{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;min-width:0}
     #ff-scraper .single-file{min-width:0}
     #ff-scraper .single-file-label{display:block;margin-bottom:3px;color:#8195ad;font-size:10px;letter-spacing:.04em}
     #ff-scraper .single-name{display:block;min-width:0;overflow:hidden;color:#f0f6ff;font-size:13px;font-weight:650;text-overflow:ellipsis;white-space:nowrap}
     #ff-scraper .single-position{grid-column:2;grid-row:1;flex:none;color:#9fb0c5;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
-    #ff-scraper .single-copy>button{grid-column:3;grid-row:1;white-space:nowrap}
-    #ff-scraper .single-nav{grid-column:4;grid-row:1;display:flex;flex-direction:row;gap:5px;flex:none}
+    #ff-scraper .single-actions{grid-column:3;grid-row:1;display:flex;align-items:center;gap:6px;min-width:max-content;white-space:nowrap}
+    #ff-scraper .single-actions>button{white-space:nowrap}
+    #ff-scraper .single-nav{display:flex;flex-direction:row;gap:4px;flex:none}
     #ff-scraper .single-nav button{width:30px;min-height:32px;height:32px;padding:0;font-size:12px}
     #ff-scraper .filter-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;margin-bottom:12px;padding:10px 13px;background:#111c2d;border:1px solid #26364b;border-radius:11px}
     #ff-scraper .filter{width:100%;min-width:0;min-height:38px;padding:0 12px;color:#dce7f5;background:#0a111d;border:1px solid #3a4d66;border-radius:8px;font-size:13px}
@@ -90,10 +91,9 @@
       #ff-scraper .action-block:nth-child(3){grid-column:auto}
       #ff-scraper .action-group{gap:6px}
       #ff-scraper .action-group button{flex:1 1 auto}
-      #ff-scraper .single-copy{grid-template-columns:minmax(0,1fr) auto auto;gap:8px}
-      #ff-scraper .single-position{grid-column:3;grid-row:1}
-      #ff-scraper .single-copy>button{grid-column:1;grid-row:2;justify-self:start}
-      #ff-scraper .single-nav{grid-column:2/4;grid-row:2;justify-self:end}
+      #ff-scraper .single-copy{grid-template-columns:minmax(0,1fr) auto;gap:8px}
+      #ff-scraper .single-position{grid-column:2;grid-row:1}
+      #ff-scraper .single-actions{grid-column:1/-1;grid-row:2;justify-self:end;min-width:0}
       #ff-scraper .filter-row{grid-template-columns:1fr;gap:8px;padding:9px 11px}
       #ff-scraper .check{white-space:normal}
       #ff-scraper .status{align-items:flex-start;flex-direction:column;gap:3px}
@@ -155,11 +155,13 @@
               <span class="single-name" id="single-name">暂无可复制链接</span>
             </div>
             <div class="single-position" id="single-position">0 / 0</div>
-            <div class="single-nav" aria-label="切换链接">
-              <button id="single-prev" type="button" aria-label="上一条链接" title="上一条" disabled>▲</button>
-              <button id="single-next" type="button" aria-label="下一条链接" title="下一条" disabled>▼</button>
+            <div class="single-actions">
+              <button class="primary" id="single-copy" disabled>复制当前直链</button>
+              <div class="single-nav" aria-label="切换链接">
+                <button id="single-prev" type="button" aria-label="上一条链接" title="上一条" disabled>▲</button>
+                <button id="single-next" type="button" aria-label="下一条链接" title="下一条" disabled>▼</button>
+              </div>
             </div>
-            <button class="primary" id="single-copy" disabled>复制当前直链</button>
           </div>
         </div>
       </div>
