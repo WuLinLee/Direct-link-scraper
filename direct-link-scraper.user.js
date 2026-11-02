@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Paste → FuckingFast 直链提取器（中文版）
 // @namespace    https://github.com/WuLinLee/Direct-link-scraper
-// @version      1.41
+// @version      1.42
 // @description  在受支持的 Paste 页面解析、筛选并导出 FuckingFast 链接。
 // @match        https://paste.fitgirl-repacks.site/*
 // @run-at       document-idle
@@ -67,7 +67,6 @@
     #ff-scraper .result-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
     #ff-scraper .result-title{color:#e8eef7;font-size:13px;font-weight:700}
     #ff-scraper .result-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    #ff-scraper .copy-output{min-height:30px;padding:0 11px;font-size:11px}
     #ff-scraper .tabs{display:flex;gap:3px;width:max-content;max-width:100%;padding:3px;background:#0a111d;border:1px solid #2b3a50;border-radius:8px}
     #ff-scraper .tabs button{min-height:30px;padding:0 12px;border:0;color:#93a4ba;background:transparent;font-size:11px}
     #ff-scraper .tabs button[aria-selected=true]{color:#07131d;background:#67e8f9}
@@ -194,9 +193,8 @@
         <div class="result-head">
           <div class="result-title">解析结果</div>
           <div class="result-tools">
-            <button class="copy-output" id="copy-output" disabled>复制文本</button>
             <div class="tabs" role="tablist" aria-label="结果显示方式">
-              <button role="tab" data-view="text" aria-selected="true">文本</button>
+              <button role="tab" data-view="text" aria-selected="true" title="切换到文本视图并复制全部文本">文本 / 复制</button>
               <button role="tab" data-view="rows" aria-selected="false">文件列表</button>
               <button role="tab" data-view="mini" aria-selected="false">链接预览</button>
             </div>
@@ -234,7 +232,6 @@
   const count = $('count');
   const progress = $('progress');
   const output = $('output');
-  const copyOutput = $('copy-output');
   const rows = $('rows');
   const mini = $('mini');
 
@@ -391,10 +388,6 @@
     });
   }
 
-  function updateOutputCopyButton() {
-    copyOutput.disabled = !output.value.trim();
-  }
-
   function updateButtons() {
     const has = selectedLinks().length > 0;
     copy.disabled = !has;
@@ -452,8 +445,31 @@
     mini.style.display = view === 'mini' ? 'flex' : 'none';
   }
 
+  async function copyOutputText(button) {
+    const text = output.value;
+    if (!text.trim()) {
+      status.textContent = '当前没有可复制的文本内容。';
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      const originalLabel = '文本 / 复制';
+      button.textContent = '已复制';
+      setTimeout(() => {
+        button.textContent = originalLabel;
+      }, 1400);
+    } catch {
+      status.textContent = '复制失败，请检查浏览器剪贴板权限。';
+    }
+  }
+
   root.querySelectorAll('[data-view]').forEach(b => {
-    b.onclick = () => setView(b.dataset.view);
+    b.onclick = () => {
+      const view = b.dataset.view;
+      setView(view);
+      if (view === 'text') copyOutputText(b);
+    };
   });
 
   setView('text');
@@ -485,24 +501,6 @@
       singleCopy.textContent = '复制失败';
       setTimeout(() => {
         singleCopy.textContent = '复制当前直链';
-      }, 1400);
-    }
-  };
-
-  copyOutput.onclick = async () => {
-    const text = output.value;
-    if (!text.trim()) return;
-
-    try {
-      await navigator.clipboard.writeText(text);
-      copyOutput.textContent = '已复制文本';
-      setTimeout(() => {
-        copyOutput.textContent = '复制文本';
-      }, 1400);
-    } catch {
-      copyOutput.textContent = '复制失败';
-      setTimeout(() => {
-        copyOutput.textContent = '复制文本';
       }, 1400);
     }
   };
@@ -634,7 +632,6 @@
         done++;
 
         output.value = displayOutput();
-        updateOutputCopyButton();
         render();
 
         progress.style.width = `${(before + done) / shares.length * 100}%`;
@@ -735,7 +732,6 @@
       selected = new Set(found.map((_, i) => i));
       singleCopyIndex = -1;
       output.value = '';
-      updateOutputCopyButton();
       render();
     }
 
