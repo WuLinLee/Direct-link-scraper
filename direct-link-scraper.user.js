@@ -86,6 +86,9 @@
       #ff-scraper .action-group button{flex:1 1 auto}
       #ff-scraper .filter-row{align-items:stretch;padding:12px}
       #ff-scraper .filter{min-width:100%;width:100%}
+      #ff-scraper .single-copy{flex-wrap:wrap}
+      #ff-scraper .single-name{flex:1 1 calc(100% - 90px)}
+      #ff-scraper .single-copy>button{flex:1 1 150px}
       #ff-scraper .check{padding:2px 0}
       #ff-scraper .result-panel{padding:11px}
       #ff-scraper textarea{min-height:220px}
